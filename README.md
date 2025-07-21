@@ -1,2 +1,2 @@
 # Custom-Hash-Table
-Pure Python Hash Table implementation
+A pure Python Hash Table implementation using test-driven development. 
