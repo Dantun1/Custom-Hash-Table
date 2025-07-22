@@ -39,6 +39,17 @@ class HashTable:
     def size(self):
         return len(self._slots)
 
+    def get(self, key):
+        if key not in self.keys:
+            return None
+
+        val = self._slots[self._get_index(key)].value
+
+        return val
+
+    def copy(self):
+        return HashTable.from_dict(dict(self.pairs), size=self.size)
+
     def _get_index(self, key):
         return hash(key) % self.size
 
@@ -60,7 +71,11 @@ class HashTable:
     def __repr__(self):
         return f"{self.__class__.__name__}({str(self)})"
 
+    def __iter__(self):
+        for pair in self.pairs:
+            yield pair.key, pair.value
+
     def __eq__(self, other):
-        return self.pairs == other.pairs
+        return self.pairs == other.pairs and self.size == other.size
 
 # TODO: Add other nonessential dict methods like copy,get

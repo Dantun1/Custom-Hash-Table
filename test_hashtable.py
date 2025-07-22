@@ -29,13 +29,18 @@ def test_should_insert_specific_pairs(hash_table):
     assert (17,18) in hash_table.pairs
     assert (True,False) in hash_table.pairs
 
-def test_shoud_get_length_of_pairs(hash_table):
+def test_should_get_length_of_pairs(hash_table):
     assert len(hash_table) == 3
 
-def test_should_get_specific_inserted_values(hash_table):
+def test_should_get_specific_inserted_values_by_indexing(hash_table):
     assert hash_table["hello"] == "world"
     assert hash_table[17] == 18
     assert hash_table[True] == False
+
+def test_should_get_pair_given_key(hash_table):
+    assert hash_table.get("hello") == "world"
+    assert hash_table.get("missing") is None
+
 
 def test_should_raise_key_error_on_invalid_key():
     with pytest.raises(KeyError) as exception:
@@ -98,9 +103,12 @@ def test_should_repr_hash_table(hash_table):
                                 "HashTable({'hello':'world', True:False, 17:18})",
                                 "HashTable({17:18, 'hello':'world', True:False})",
                                 "HashTable({17:18, True:False, 'hello':'world'})",
-                                "HashTable({True:False, 'hello':'world, 17:18})",
+                                "HashTable({True:False, 'hello':'world', 17:18})",
                                 "HashTable({True:False, 17:18, 'hello':'world'})",
                                 }
 
-# TODO: More tests for equality
+def test_should_copy_hash_table(hash_table):
+    assert hash_table.copy() == hash_table
+    assert hash_table.copy() is not hash_table
+
 
