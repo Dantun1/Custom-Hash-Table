@@ -1,5 +1,6 @@
 from typing import NamedTuple
 
+DELETED = object()
 
 class Pair(NamedTuple):
     key: str
@@ -25,7 +26,7 @@ class HashTable:
 
     @property
     def pairs(self):
-        return {pair for pair in self._slots if pair}
+        return {pair for pair in self._slots if pair and pair is not DELETED}
 
     @property
     def keys(self):
@@ -51,19 +52,51 @@ class HashTable:
         return HashTable.from_dict(dict(self.pairs), size=self.size)
 
     def _get_index(self, key):
-        return hash(key) % self.size
+        index = hash(key) % len(self._slots)
+
+        return index
+
+    def _probe(self, key):
+        index = self._get_index(key)
+        for _ in range(self.size):
+            yield self._slots[index], index
+            index = (index + 1) % self.size
 
     def __len__(self):
         return len(self.pairs)
 
     def __setitem__(self, key, value):
-        self._slots[self._get_index(key)] = Pair(key, value)
+        for pair, index in self._probe(key):
+            if pair is DELETED:
+                continue
+            if pair is None or pair.key == key:
+                self._slots[index] = Pair(key, value)
+                break
+        else:
+            raise MemoryError("Hash table is full")
 
     def __getitem__(self, key):
-        if pair := self._slots[self._get_index(key)] :
-            return pair.value
+        for pair, _ in self._probe(key):
+            if pair is None:
+                raise KeyError(key)
+            if pair is DELETED:
+                continue
+            if pair.key == key:
+                return pair.value
+        raise KeyError(key)
+
+    def __delitem__(self, key):
+        for pair, index in self._probe(key):
+            if pair is None:
+                raise KeyError(key)
+            if pair is DELETED:
+                continue
+            if pair.key == key:
+                self._slots[index] = DELETED
+                break
         else:
-            raise KeyError("key not found")
+            raise KeyError(key)
+
 
     def __str__(self):
         return "{" + str(", ".join([f"{key!r}:{value!r}"for key,value in self.pairs])) +"}"
@@ -78,4 +111,5 @@ class HashTable:
     def __eq__(self, other):
         return self.pairs == other.pairs and self.size == other.size
 
-# TODO: Add other nonessential dict methods like copy,get
+
+# TODO: Implement various hash functions, add optionality

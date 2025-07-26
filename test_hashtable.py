@@ -1,6 +1,7 @@
-from hashtable import HashTable, Pair
+from hashtable import HashTable, Pair, DELETED
 import pytest
 from pytest_unordered import unordered
+from unittest.mock import patch
 
 # Initialisation
 
@@ -47,7 +48,6 @@ def test_should_raise_key_error_on_invalid_key():
         ht = HashTable(size=10)["invalid_key"]
 
     assert exception.type == KeyError
-    assert str(exception.value) == "'key not found'"
 
 def test_should_get_all_keys(hash_table):
     assert hash_table.keys == {"hello",17,True}
@@ -110,5 +110,66 @@ def test_should_repr_hash_table(hash_table):
 def test_should_copy_hash_table(hash_table):
     assert hash_table.copy() == hash_table
     assert hash_table.copy() is not hash_table
+
+@patch("builtins.hash", return_value=5)
+def test_should_insert_collided_value(mock_hash):
+    ht = HashTable(size=10)
+    ht["hello"] = "world"
+    ht["hey"] = "people"
+    assert "world" in ht.values
+    assert "people" in ht.values
+
+def test_collided_values_should_insert_in_correct_slots_wrapping_around():
+    ht = HashTable(size=10)
+    with patch("builtins.hash", side_effect=[8,9,8]):
+        ht["hello"] = "world"
+        ht["hey"] = "people"
+        ht["hi"] = "everyone"
+
+    assert ht._slots[8].value == "world"
+    assert ht._slots[9].value == "people"
+    assert ht._slots[0].value == "everyone"
+
+
+def test_should_raise_memory_error_on_full_hash_table_insert():
+    ht = HashTable(size=2)
+    ht["hello"] = "world"
+    ht["hey"] = "people"
+    with pytest.raises(MemoryError) as exception:
+        ht["hi"] = "everyone"
+
+
+@patch("builtins.hash", return_value=5)
+def test_should_get_subsequent_collided_values(mock_hash):
+    ht = HashTable(size=10)
+    ht["hello"] = "world"
+    ht["hey"] = "people"
+    assert ht["hello"] == "world"
+    assert ht["hey"] == "people"
+
+@patch("builtins.hash", return_value=5)
+def test_should_delete_key_value_pair_with_sentinel_value(mock_hash):
+    ht = HashTable(size=10)
+    ht["hello"] = "world"
+    del ht["hello"]
+    assert ht._slots[5] is DELETED
+
+@patch("builtins.hash", return_value=5)
+def test_should_insert_after_deleted(mock_hash):
+    ht = HashTable(size=10)
+    ht["hello"] = "world"
+    del ht["hello"]
+    ht["hey"] = "people"
+    assert ht._slots[5] is DELETED
+    assert ht._slots[6].value == "people"
+
+@patch("builtins.hash", return_value=5)
+def test_should_get_value_after_deleted(mock_hash):
+    ht = HashTable(size=10)
+    ht["hello"] = "world"
+    del ht["hello"]
+    ht["hey"] = "people"
+    assert ht._slots[5] is DELETED
+    assert ht["hey"] == "people"
 
 
