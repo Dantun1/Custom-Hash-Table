@@ -130,15 +130,6 @@ def test_collided_values_should_insert_in_correct_slots_wrapping_around():
     assert ht._slots[9].value == "people"
     assert ht._slots[0].value == "everyone"
 
-
-def test_should_raise_memory_error_on_full_hash_table_insert():
-    ht = HashTable(size=2)
-    ht["hello"] = "world"
-    ht["hey"] = "people"
-    with pytest.raises(MemoryError) as exception:
-        ht["hi"] = "everyone"
-
-
 @patch("builtins.hash", return_value=5)
 def test_should_get_subsequent_collided_values(mock_hash):
     ht = HashTable(size=10)
@@ -155,21 +146,50 @@ def test_should_delete_key_value_pair_with_sentinel_value(mock_hash):
     assert ht._slots[5] is DELETED
 
 @patch("builtins.hash", return_value=5)
-def test_should_insert_after_deleted(mock_hash):
+def test_should_insert_in_deleted_if_key_not_duplicate(mock_hash):
     ht = HashTable(size=10)
     ht["hello"] = "world"
-    del ht["hello"]
     ht["hey"] = "people"
+    del ht["hello"]
     assert ht._slots[5] is DELETED
-    assert ht._slots[6].value == "people"
+    ht["hello"] = "everyone"
+    assert ht._slots[5].value == "everyone"
 
 @patch("builtins.hash", return_value=5)
 def test_should_get_value_after_deleted(mock_hash):
     ht = HashTable(size=10)
     ht["hello"] = "world"
-    del ht["hello"]
     ht["hey"] = "people"
+    del ht["hello"]
     assert ht._slots[5] is DELETED
     assert ht["hey"] == "people"
+
+def test_should_resize_and_rehash():
+    ht = HashTable(size=5)
+    ht["hello"] = "world"
+    del ht["hello"]
+    ht["hey"] = "people"
+    assert ht.size == 5
+    ht._resize_and_rehash()
+    assert ht.size == 10
+    assert DELETED not in ht._slots
+    assert ("hey","people") in ht.pairs
+
+def test_should_calculate_load_factor(hash_table):
+    assert hash_table.load_factor == 0.3
+
+def test_should_automatically_resize_and_rehash_on_insert_if_lf_above_threshold():
+    ht = HashTable(size=5,lf_threshold=0.4)
+    ht["hello"] = "world"
+    ht["hey"] = "people"
+    assert ht.load_factor < 0.5
+    assert ht.size == 5
+    ht[17] = 18
+    assert ht.size == 10
+
+
+
+
+
 
 
